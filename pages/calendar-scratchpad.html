@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>캘린더 연습장</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    :root {
+      --gutter: 52px
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #e5e5ea;
+      color: #333;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* App container — constrained width on PC */
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #f7f7f8;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, .06);
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      height: 48px;
+      background: #fff;
+      border-bottom: 1px solid #e2e2e5;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .toolbar-l {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .toolbar-l h1 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -.3px
+    }
+
+    .ref-date {
+      font-size: 13px;
+      border: 1px solid #e0e0e0;
+      border-radius: 7px;
+      padding: 4px 8px;
+      font-family: inherit;
+      outline: none;
+      color: #444;
+      transition: border-color .15s;
+    }
+
+    .ref-date:focus {
+      border-color: #1a73e8
+    }
+
+    .btn-export {
+      padding: 5px 10px;
+      background: #fff;
+      color: #555;
+      border: 1px solid #e0e0e0;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all .15s;
+    }
+
+    .btn-export:hover {
+      background: #f5f5f5;
+      border-color: #bbb
+    }
+
+    .btn-reset {
+      padding: 5px 14px;
+      background: #fff;
+      color: #d32f2f;
+      border: 1px solid #e0e0e0;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all .15s;
+    }
+
+    .btn-reset:hover {
+      background: #fff5f5;
+      border-color: #ef9a9a
+    }
+
+    .toolbar-r {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .quick-input {
+      width: 100px;
+      padding: 5px 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 7px;
+      font-size: 13px;
+      font-family: 'SF Mono', Menlo, monospace;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      letter-spacing: 1.5px;
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    .quick-input:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, .12)
+    }
+
+    .quick-input::placeholder {
+      color: #bbb;
+      letter-spacing: 0;
+      font-family: inherit
+    }
+
+    /* Calendar */
+    .calendar {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden
+    }
+
+    /* Day headers */
+    .cal-header {
+      display: flex;
+      flex-shrink: 0;
+      background: #fff;
+      border-bottom: 1px solid #e2e2e5;
+      z-index: 15;
+    }
+
+    .gutter-head {
+      width: var(--gutter);
+      flex-shrink: 0;
+      border-right: 1px solid #e2e2e5
+    }
+
+    .day-headers {
+      display: flex;
+      flex: 1
+    }
+
+    .day-hd {
+      flex: 1;
+      text-align: center;
+      padding: 6px 0 8px;
+      border-right: 1px solid #efefef;
+    }
+
+    .day-hd:last-child {
+      border-right: none
+    }
+
+    .day-hd .label {
+      font-size: 11px;
+      color: #888;
+      font-weight: 500
+    }
+
+    .day-hd .date {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 1px;
+      color: #444
+    }
+
+    .day-hd.today {
+      background: #edf2fc
+    }
+
+    .day-hd.today .label {
+      color: #1a73e8
+    }
+
+    .day-hd.today .date {
+      color: #1a73e8
+    }
+
+    /* Scroll body — scrollable but scrollbar hidden */
+    .cal-body {
+      flex: 1;
+      display: flex;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none
+    }
+
+    .cal-body::-webkit-scrollbar {
+      display: none
+    }
+
+    /* Zoom controls */
+    .zoom-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 0
+    }
+
+    .zoom-btn {
+      width: 26px;
+      height: 26px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      cursor: pointer;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      transition: background .1s;
+    }
+
+    .zoom-btn:first-child {
+      border-radius: 6px 0 0 6px
+    }
+
+    .zoom-btn:last-child {
+      border-radius: 0 6px 6px 0
+    }
+
+    .zoom-btn:hover {
+      background: #f0f0f0
+    }
+
+    .zoom-lvl {
+      font-size: 10px;
+      color: #777;
+      min-width: 40px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      border-top: 1px solid #e0e0e0;
+      border-bottom: 1px solid #e0e0e0;
+      height: 26px;
+      line-height: 26px;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    .zoom-lvl:hover {
+      background: #f0f0f0;
+      color: #333
+    }
+
+    /* Time gutter */
+    .time-gutter {
+      width: var(--gutter);
+      flex-shrink: 0;
+      position: relative;
+      height: var(--total);
+      border-right: 1px solid #e2e2e5;
+      background: #fff;
+    }
+
+    .hour-label {
+      position: absolute;
+      right: 8px;
+      font-size: 10px;
+      color: #aaa;
+      transform: translateY(-50%);
+      font-variant-numeric: tabular-nums;
+      pointer-events: none;
+    }
+
+    /* Columns */
+    .cols {
+      display: flex;
+      flex: 1;
+      height: var(--total);
+      position: relative
+    }
+
+    .day-col {
+      flex: 1;
+      position: relative;
+      border-right: 1px solid #efefef;
+      overflow: hidden;
+      background-image:
+        linear-gradient(to bottom, #ddd 1px, transparent 1px),
+        linear-gradient(to bottom, #ebebeb 1px, transparent 1px);
+      background-size: 100% var(--hour), 100% calc(var(--hour)/2);
+    }
+
+    .day-col.fine-grid {
+      background-image:
+        linear-gradient(to bottom, #ddd 1px, transparent 1px),
+        linear-gradient(to bottom, #ebebeb 1px, transparent 1px),
+        linear-gradient(to bottom, #f3f3f3 1px, transparent 1px);
+      background-size: 100% var(--hour), 100% calc(var(--hour)/2), 100% var(--slot);
+    }
+
+    .day-col:last-child {
+      border-right: none
+    }
+
+    .day-col.today-col {
+      background-color: rgba(66, 133, 244, .02)
+    }
+
+    /* Events */
+    .ev {
+      position: absolute;
+      left: 3px;
+      right: 3px;
+      padding: 2px 7px;
+      font-size: 11px;
+      cursor: grab;
+      overflow: hidden;
+      z-index: 5;
+      border-left: 3px solid;
+      min-height: 8px;
+    }
+
+    .ev:hover,
+    .ev.hov {
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .07);
+      z-index: 200 !important
+    }
+
+    .ev.dragging {
+      opacity: .85;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+      z-index: 300 !important;
+      cursor: grabbing
+    }
+
+    .ev-title {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.4
+    }
+
+    .ev-meta {
+      font-size: 10px;
+      opacity: .6;
+      line-height: 1.3;
+      display: flex;
+      gap: 4px
+    }
+
+    .ev-dur {
+      font-weight: 500;
+      cursor: pointer
+    }
+
+    .ev-dur:hover {
+      opacity: 1;
+      text-decoration: underline dotted
+    }
+
+    .ev-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      color: inherit;
+      outline: none;
+      padding: 0;
+      -moz-appearance: textfield;
+    }
+
+    .ev-input::-webkit-inner-spin-button,
+    .ev-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .resize-h {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 7px;
+      cursor: ns-resize;
+      z-index: 2
+    }
+
+    .resize-h.top {
+      top: -2px
+    }
+
+    .resize-h.bottom {
+      bottom: -2px
+    }
+
+    /* Delete button — larger */
+    .del-btn {
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity .12s;
+      background: none;
+      border: none;
+      color: inherit;
+      border-radius: 4px;
+      line-height: 1;
+    }
+
+    .ev:hover .del-btn,
+    .ev.hov .del-btn {
+      opacity: .5
+    }
+
+    .del-btn:hover {
+      opacity: 1 !important;
+      background: rgba(0, 0, 0, .1)
+    }
+
+    /* Drag preview */
+    .drag-pv {
+      position: absolute;
+      left: 3px;
+      right: 3px;
+      background: rgba(26, 115, 232, .12);
+      border: 2px dashed rgba(26, 115, 232, .35);
+      border-radius: 5px;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    /* Now line */
+    .now-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #ea4335;
+      z-index: 500;
+      pointer-events: none;
+    }
+
+    .now-line::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: -3px;
+      width: 8px;
+      height: 8px;
+      background: #ea4335;
+      border-radius: 50%;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30, 30, 30, .82);
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 12px;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .3s;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    .toast.show {
+      opacity: 1
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="toolbar">
+      <div class="toolbar-l">
+        <h1>캘린더 연습장</h1>
+        <input type="date" id="refDateInput" class="ref-date" title="기준일 설정">
+      </div>
+      <div class="toolbar-r">
+        <div class="zoom-ctrl">
+          <button class="zoom-btn" id="zoomOut" title="축소">−</button>
+          <span class="zoom-lvl" id="zoomLvl" title="클릭: 화면 맞춤">맞춤</span>
+          <button class="zoom-btn" id="zoomIn" title="확대">+</button>
+        </div>
+        <input type="text" id="quickAdd" class="quick-input" placeholder="0900+90" maxlength="12"
+          title="시작+끝 8자리 또는 시작+분 (예: 09001730, 0900+90)">
+        <button class="btn-export" id="exportBtn" title="JSON 복사">JSON</button>
+        <button class="btn-reset" id="resetBtn">초기화</button>
+      </div>
+    </div>
+    <div class="calendar">
+      <div class="cal-header">
+        <div class="gutter-head"></div>
+        <div class="day-headers" id="dayHeaders"></div>
+      </div>
+      <div class="cal-body" id="calBody">
+        <div class="time-gutter" id="timeGutter"></div>
+        <div class="cols" id="cols"></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /* ===== Config ===== */
+    let HOUR = 40;
+    const SNAP = 5;
+    const MIN_DUR = 15;
+    const NUM_COLS = 5;        // D-1, D+0, D+1, D+2, D+3
+    const COL_OFFSET = 1;     // column index 1 = day 0 (reference date)
+    const DAY_OFFSETS = [-1, 0, 1, 2, 3];
+    const MIN_ABS = -1440;    // D-1 00:00
+    const MAX_ABS = 4 * 1440; // D+3 24:00 = 5760
+
+    /* ===== Colors ===== */
+    const PAL = [
+      { bg: '#dbeafe', bd: '#3b82f6', tx: '#1e40af' },
+      { bg: '#fce7f3', bd: '#ec4899', tx: '#9d174d' },
+      { bg: '#d1fae5', bd: '#10b981', tx: '#065f46' },
+      { bg: '#fef3c7', bd: '#f59e0b', tx: '#92400e' },
+      { bg: '#ede9fe', bd: '#8b5cf6', tx: '#5b21b6' },
+      { bg: '#ccfbf1', bd: '#14b8a6', tx: '#134e4a' },
+      { bg: '#fee2e2', bd: '#ef4444', tx: '#991b1b' },
+      { bg: '#e0e7ff', bd: '#6366f1', tx: '#3730a3' },
+    ];
+
+    /* ===== State ===== */
+    let evts = [];
+    let nextId = 1;
+    let palIdx = 0;
+    let drag = null;
+    let zoom = 1;
+    const ZOOM_MIN = 1, ZOOM_MAX = 5, ZOOM_STEP = 0.25;
+
+    /* ===== Dates ===== */
+    const now = new Date();
+    const actualToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let refDate = new Date(actualToday);
+    let days = [];
+    const DNAME = ['일', '월', '화', '수', '목', '금', '토'];
+
+    function updateDays() {
+      days = DAY_OFFSETS.map(off => {
+        const d = new Date(refDate); d.setDate(refDate.getDate() + off); return d;
+      });
+    }
+
+    function dayLabel(c) {
+      const off = DAY_OFFSETS[c];
+      const isRef = refDate.getTime() === actualToday.getTime();
+      if (isRef) {
+        if (off === -1) return '어제';
+        if (off === 0) return '오늘';
+        if (off === 1) return '내일';
+        if (off === 2) return '모레';
+        return `D+${off}`;
+      }
+      if (off === 0) return '기준일';
+      return off > 0 ? `D+${off}` : `D${off}`;
+    }
+
+    function colAbs(c) { return DAY_OFFSETS[c] * 1440; }
+
+    /* ===== Persistence (localStorage) ===== */
+    const STORAGE_KEY = 'cal-scratchpad';
+
+    function saveState() {
+      evts.sort((a, b) => a.as - b.as);
+      const ref = refDate.toISOString().slice(0, 10);
+      const data = { v: 2, ref, evts: evts.map(e => ({ id: e.id, as: e.as, ae: e.ae, title: e.title, ci: PAL.indexOf(e.c) })), nextId, palIdx };
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch { }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data.v === 2 && data.ref) {
+          refDate = new Date(data.ref + 'T00:00:00');
+        }
+        evts = data.evts.map(e => ({ id: e.id, as: e.as, ae: e.ae, title: e.title, c: PAL[(e.ci ?? 0) % PAL.length] }));
+        evts = evts.filter(e => e.ae > MIN_ABS && e.as < MAX_ABS);
+        evts.sort((a, b) => a.as - b.as);
+        nextId = data.nextId || 1;
+        palIdx = data.palIdx || 0;
+      } catch { }
+    }
+
+    function exportJSON() {
+      if (!evts.length) { toast('일정이 없습니다'); return; }
+      const out = evts.map(e => ({ title: e.title, as: e.as, ae: e.ae, dur: e.ae - e.as })).sort((a, b) => a.as - b.as);
+      navigator.clipboard.writeText(JSON.stringify(out, null, 2))
+        .then(() => toast('JSON 복사 완료'))
+        .catch(() => toast('복사 실패'));
+    }
+
+    /* ===== Util ===== */
+    const m2y = m => (m / 60) * HOUR;
+    const y2m = y => (y / HOUR) * 60;
+    const sn = m => Math.round(m / SNAP) * SNAP;
+    const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+    function fmt(m) {
+      const h = Math.floor(m / 60), mm = m % 60;
+      return `${h}:${String(mm).padStart(2, '0')}`;
+    }
+    function fmtDur(m) {
+      const h = Math.floor(m / 60), mm = m % 60;
+      if (h && mm) return `${h}시간 ${mm}분`;
+      if (h) return `${h}시간`;
+      return `${mm}분`;
+    }
+
+    function absFromMouse(cx, cy) {
+      for (let c = 0; c < NUM_COLS; c++) {
+        const r = document.getElementById('col-' + c).getBoundingClientRect();
+        if (cx >= r.left && cx <= r.right) {
+          return colAbs(c) + sn(cl(y2m(cy - r.top), 0, 1440));
+        }
+      }
+      return null;
+    }
+
+    /* ===== Build DOM ===== */
+    function buildHeaders() {
+      document.getElementById('dayHeaders').innerHTML = days.map((d, i) =>
+        `<div class="day-hd${i === COL_OFFSET ? ' today' : ''}">
+        <div class="label">${dayLabel(i)} · ${DNAME[d.getDay()]}</div>
+        <div class="date">${d.getMonth() + 1}/${d.getDate()}</div>
+      </div>`
+      ).join('');
+    }
+
+    function buildGutter() {
+      const el = document.getElementById('timeGutter');
+      let h = '';
+      for (let i = 1; i < 24; i++) h += `<div class="hour-label" style="top:${i * HOUR}px">${i}:00</div>`;
+      el.innerHTML = h;
+    }
+
+    function buildColumns() {
+      const todayDiff = Math.round((actualToday - refDate) / 86400000);
+      const todayColIdx = DAY_OFFSETS.indexOf(todayDiff);
+      document.getElementById('cols').innerHTML = DAY_OFFSETS.map((_, c) =>
+        `<div class="day-col${c === COL_OFFSET ? ' today-col' : ''}${c === todayColIdx ? ' today-col' : ''}" data-col="${c}" id="col-${c}"></div>`
+      ).join('');
+    }
+
+    /* ===== Render ===== */
+    function render() {
+      for (let c = 0; c < NUM_COLS; c++) {
+        const col = document.getElementById('col-' + c);
+        col.querySelectorAll('.ev').forEach(e => e.remove());
+
+        const cA = colAbs(c), cE = cA + 1440;
+        const segs = [];
+        evts.forEach(ev => {
+          if (ev.as >= cE || ev.ae <= cA) return;
+          segs.push({ ev, segS: Math.max(ev.as, cA) - cA, segE: Math.min(ev.ae, cE) - cA });
+        });
+        segs.sort((a, b) => a.segS - b.segS);
+
+        segs.forEach((seg, idx) => {
+          const { ev, segS, segE } = seg;
+          const segDur = segE - segS;
+          const isFirst = ev.as >= cA && ev.as < cE;
+          const isLast = ev.ae > cA && ev.ae <= cE;
+          const totalDur = ev.ae - ev.as;
+          const top = m2y(segS), h = Math.max(m2y(segDur), 8);
+
+          let br = '5px';
+          if (!isFirst && !isLast) br = '0';
+          else if (!isFirst) br = '0 0 5px 5px';
+          else if (!isLast) br = '5px 5px 0 0';
+
+          const d = document.createElement('div');
+          d.className = 'ev'; d.dataset.id = ev.id;
+          d.style.cssText = `top:${top}px;height:${h}px;background:${ev.c.bg};border-left-color:${ev.c.bd};color:${ev.c.tx};border-radius:${br};z-index:${5 + idx}`;
+
+          let inner = '';
+          if (segDur >= 15) inner += `<div class="ev-title">${ev.title || '(제목 없음)'}</div>`;
+          if (segDur >= 25) inner += `<div class="ev-meta"><span class="ev-dur">${fmtDur(totalDur)}</span> <span>${fmt(segS)}–${fmt(segE)}</span></div>`;
+          if (isFirst) inner += '<div class="resize-h top"></div>';
+          if (isLast) inner += '<div class="resize-h bottom"></div>';
+          inner += '<button class="del-btn">\u00d7</button>';
+          d.innerHTML = inner;
+          col.appendChild(d);
+        });
+      }
+      updateNow();
+    }
+
+    /* ===== CRUD ===== */
+    function addEvt(as, ae, title) {
+      if (as > ae) [as, ae] = [ae, as];
+      if (ae - as < MIN_DUR) ae = as + MIN_DUR;
+      as = cl(as, MIN_ABS, MAX_ABS - MIN_DUR);
+      ae = cl(ae, MIN_ABS + MIN_DUR, MAX_ABS);
+      const c = PAL[palIdx++ % PAL.length];
+      const ev = { id: nextId++, as, ae, title: title || '', c };
+      evts.push(ev); saveState(); render();
+      return ev;
+    }
+
+    function delEvt(id) { evts = evts.filter(e => e.id !== id); saveState(); render(); }
+
+    function resetAll() {
+      if (!evts.length) return;
+      evts = []; nextId = 1; palIdx = 0; saveState(); render();
+      toast('초기화 완료');
+    }
+
+    /* ===== Now line ===== */
+    function updateNow() {
+      document.querySelectorAll('.now-line').forEach(e => e.remove());
+      const n = new Date();
+      const todayDiff = Math.round((actualToday - refDate) / 86400000);
+      const todayColIdx = DAY_OFFSETS.indexOf(todayDiff);
+      if (todayColIdx === -1) return;
+      const col = document.getElementById('col-' + todayColIdx);
+      if (!col) return;
+      const line = document.createElement('div');
+      line.className = 'now-line';
+      line.style.top = m2y(n.getHours() * 60 + n.getMinutes()) + 'px';
+      col.appendChild(line);
+    }
+
+    /* ===== Toast ===== */
+    let toastT;
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg; el.classList.add('show');
+      clearTimeout(toastT);
+      toastT = setTimeout(() => el.classList.remove('show'), 2200);
+    }
+
+    /* ===== Dragging class helper ===== */
+    function markDrag(id) {
+      document.querySelectorAll(`.ev[data-id="${id}"]`).forEach(s => s.classList.add('dragging'));
+    }
+
+    /* ===== Drag: Create / Move / Resize ===== */
+    document.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      if (e.target.classList.contains('del-btn')) { const p = e.target.closest('.ev'); if (p) delEvt(+p.dataset.id); return; }
+
+      const rh = e.target.closest('.resize-h');
+      if (rh) {
+        const p = rh.closest('.ev'); const ev = evts.find(v => v.id === +p.dataset.id);
+        if (!ev) return; e.preventDefault();
+        drag = { type: 'resize', ev, edge: rh.classList.contains('top') ? 'top' : 'bot' };
+        markDrag(ev.id); return;
+      }
+      const evEl = e.target.closest('.ev');
+      if (evEl) {
+        const ev = evts.find(v => v.id === +evEl.dataset.id);
+        if (!ev) return; e.preventDefault();
+        const abs = absFromMouse(e.clientX, e.clientY);
+        if (abs == null) return;
+        drag = { type: 'move', ev, off: abs - ev.as, dur: ev.ae - ev.as, moved: false, el: evEl, target: e.target };
+        markDrag(ev.id); return;
+      }
+      const colEl = e.target.closest('.day-col');
+      if (colEl) {
+        e.preventDefault(); const abs = absFromMouse(e.clientX, e.clientY);
+        if (abs == null) return;
+        drag = { type: 'create', startAbs: abs, curAbs: abs }; showPreview(abs, abs);
+      }
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!drag) return; e.preventDefault();
+      const abs = absFromMouse(e.clientX, e.clientY);
+      if (abs == null) return;
+
+      if (drag.type === 'create') { drag.curAbs = abs; showPreview(drag.startAbs, drag.curAbs); }
+      else if (drag.type === 'move') {
+        drag.moved = true;
+        let ns = sn(abs - drag.off);
+        ns = cl(ns, MIN_ABS, MAX_ABS - drag.dur);
+        drag.ev.as = ns; drag.ev.ae = ns + drag.dur;
+        render(); markDrag(drag.ev.id);
+      }
+      else if (drag.type === 'resize') {
+        const ev = drag.ev;
+        if (drag.edge === 'top') { ev.as = cl(abs, MIN_ABS, MAX_ABS); if (ev.as >= ev.ae) { [ev.as, ev.ae] = [ev.ae, ev.as]; drag.edge = 'bot'; } }
+        else { ev.ae = cl(abs, MIN_ABS, MAX_ABS); if (ev.ae <= ev.as) { [ev.as, ev.ae] = [ev.ae, ev.as]; drag.edge = 'top'; } }
+        if (ev.ae - ev.as < MIN_DUR) { if (drag.edge === 'top') ev.as = ev.ae - MIN_DUR; else ev.ae = ev.as + MIN_DUR; }
+        ev.as = cl(ev.as, MIN_ABS, MAX_ABS); ev.ae = cl(ev.ae, MIN_ABS, MAX_ABS);
+        render(); markDrag(ev.id);
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!drag) return;
+      if (drag.type === 'create') {
+        clearPreviews();
+        let lo = Math.min(drag.startAbs, drag.curAbs), hi = Math.max(drag.startAbs, drag.curAbs);
+        if (hi - lo < MIN_DUR) { hi = lo + 30; if (hi > MAX_ABS) { hi = MAX_ABS; lo = MAX_ABS - 30; } }
+        const ev = addEvt(lo, hi, '');
+        setTimeout(() => editTitle(ev.id), 30);
+      }
+      else if (drag.type === 'move') {
+        document.querySelectorAll('.ev.dragging').forEach(s => s.classList.remove('dragging'));
+        if (!drag.moved) { if (drag.target.closest('.ev-dur')) editDuration(drag.ev.id, drag.el); else editTitle(drag.ev.id, drag.el); }
+        else saveState();
+      }
+      else if (drag.type === 'resize') {
+        document.querySelectorAll('.ev.dragging').forEach(s => s.classList.remove('dragging'));
+        saveState();
+      }
+      drag = null;
+    });
+
+    /* ===== Preview ===== */
+    function showPreview(absS, absE) {
+      clearPreviews();
+      const lo = Math.min(absS, absE), hi = Math.max(absS, absE), minH = m2y(MIN_DUR);
+      for (let c = 0; c < NUM_COLS; c++) {
+        const cA = colAbs(c), cE = cA + 1440;
+        if (lo >= cE || hi <= cA) continue;
+        const top = m2y(Math.max(lo, cA) - cA), h = Math.max(m2y(Math.min(hi, cE) - Math.max(lo, cA)), minH);
+        const d = document.createElement('div'); d.className = 'drag-pv';
+        d.style.cssText = `top:${top}px;height:${h}px`;
+        document.getElementById('col-' + c).appendChild(d);
+      }
+    }
+    function clearPreviews() { document.querySelectorAll('.drag-pv').forEach(e => e.remove()); }
+
+    /* ===== Title editing ===== */
+    function editTitle(id, targetEl) {
+      if (!targetEl) targetEl = document.querySelector(`.ev[data-id="${id}"]`);
+      if (!targetEl) return;
+      const ev = evts.find(e => e.id === id); if (!ev) return;
+      const titleEl = targetEl.querySelector('.ev-title'); if (!titleEl) return;
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'ev-input'; inp.value = ev.title; inp.placeholder = '일정 이름';
+      titleEl.replaceWith(inp); inp.focus(); inp.select();
+      const done = () => { ev.title = inp.value.trim(); saveState(); render(); };
+      inp.addEventListener('blur', done);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') { inp.value = ev.title; inp.blur(); } });
+      inp.addEventListener('mousedown', e => e.stopPropagation());
+    }
+
+    /* ===== Duration editing ===== */
+    function editDuration(id, targetEl) {
+      if (!targetEl) targetEl = document.querySelector(`.ev[data-id="${id}"]`);
+      if (!targetEl) return;
+      const ev = evts.find(e => e.id === id); if (!ev) return;
+      const metaEl = targetEl.querySelector('.ev-meta'); if (!metaEl) return;
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.className = 'ev-input'; inp.value = ev.ae - ev.as;
+      inp.min = MIN_DUR; inp.step = SNAP; inp.placeholder = '분';
+      inp.style.fontSize = '10px'; inp.style.fontWeight = '500';
+      metaEl.replaceWith(inp); inp.focus(); inp.select();
+      const done = () => { const val = parseInt(inp.value); if (!isNaN(val) && val >= MIN_DUR) ev.ae = cl(ev.as + sn(val), ev.as + MIN_DUR, MAX_ABS); saveState(); render(); };
+      inp.addEventListener('blur', done);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') inp.blur(); });
+      inp.addEventListener('mousedown', e => e.stopPropagation());
+    }
+
+    /* Double-click to edit */
+    document.addEventListener('dblclick', e => { const el = e.target.closest('.ev'); if (el) editTitle(+el.dataset.id, el); });
+
+    /* ===== Multi-segment hover ===== */
+    document.addEventListener('pointerover', e => {
+      document.querySelectorAll('.ev.hov').forEach(s => s.classList.remove('hov'));
+      const seg = e.target.closest('.ev');
+      if (seg) document.querySelectorAll(`.ev[data-id="${seg.dataset.id}"]`).forEach(s => s.classList.add('hov'));
+    });
+    document.getElementById('cols')?.addEventListener('pointerleave', () => {
+      document.querySelectorAll('.ev.hov').forEach(s => s.classList.remove('hov'));
+    });
+
+    /* ===== Quick add ===== */
+    document.getElementById('quickAdd').addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const v = e.target.value.replace(/\s/g, '');
+      const D0 = 0; // reference date midnight = abs 0
+      let as, ae;
+      if (v.includes('+')) {
+        const [tp, dp] = v.split('+');
+        if (!/^\d{4}$/.test(tp) || !/^\d{1,4}$/.test(dp)) { toast('형식: 0900+90 (시작+분)'); return; }
+        const sh = +tp.slice(0, 2), sm = +tp.slice(2, 4), dur = +dp;
+        if (sh > 23 || sm > 59) { toast('유효한 시간을 입력하세요'); return; }
+        if (dur < MIN_DUR) { toast(`최소 ${MIN_DUR}분 이상`); return; }
+        as = D0 + sh * 60 + sm; ae = as + dur;
+      } else {
+        if (!/^\d{8}$/.test(v)) { toast('09001730 또는 0900+90 형식'); return; }
+        const sh = +v.slice(0, 2), sm = +v.slice(2, 4), eh = +v.slice(4, 6), em = +v.slice(6, 8);
+        if (sh > 23 || sm > 59 || eh > 23 || em > 59) { toast('유효한 시간을 입력하세요'); return; }
+        as = D0 + sh * 60 + sm; ae = D0 + eh * 60 + em;
+        if (ae <= as) ae += 1440;
+      }
+      const ev = addEvt(as, ae, '');
+      e.target.value = ''; e.target.blur();
+      setTimeout(() => editTitle(ev.id), 30);
+    });
+
+    /* ===== Reference date change ===== */
+    document.getElementById('refDateInput').addEventListener('change', e => {
+      const nd = new Date(e.target.value + 'T00:00:00');
+      if (isNaN(nd)) return;
+      refDate = nd;
+      updateDays(); buildHeaders(); buildColumns(); saveState(); calcLayout();
+    });
+
+    /* ===== Layout & Zoom ===== */
+    let baseHour = 40;
+
+    function calcLayout() {
+      const app = document.querySelector('.app');
+      const toolbar = document.querySelector('.toolbar');
+      const calHeader = document.querySelector('.cal-header');
+      const avail = app.clientHeight - toolbar.offsetHeight - calHeader.offsetHeight;
+      baseHour = avail / 24;
+      HOUR = baseHour * zoom;
+      const total = 24 * HOUR;
+      const root = document.documentElement;
+      root.style.setProperty('--hour', HOUR + 'px');
+      root.style.setProperty('--total', total + 'px');
+      root.style.setProperty('--slot', (HOUR / 12) + 'px');
+      document.querySelectorAll('.day-col').forEach(col => col.classList.toggle('fine-grid', HOUR >= 60));
+      buildGutter(); render();
+    }
+
+    function setZoom(nz, centerMin) {
+      const cb = document.getElementById('calBody');
+      if (centerMin == null) centerMin = y2m(cb.scrollTop + cb.clientHeight / 2);
+      zoom = cl(Math.round(nz * 100) / 100, ZOOM_MIN, ZOOM_MAX);
+      calcLayout();
+      if (zoom > 1) cb.scrollTop = m2y(centerMin) - cb.clientHeight / 2;
+      document.getElementById('zoomLvl').textContent = zoom <= 1 ? '맞춤' : Math.round(zoom * 100) + '%';
+    }
+
+    window.addEventListener('resize', () => {
+      const cb = document.getElementById('calBody');
+      const cm = y2m(cb.scrollTop + cb.clientHeight / 2);
+      calcLayout();
+      if (zoom > 1) cb.scrollTop = m2y(cm) - cb.clientHeight / 2;
+    });
+    document.getElementById('zoomIn').addEventListener('click', () => setZoom(zoom + ZOOM_STEP));
+    document.getElementById('zoomOut').addEventListener('click', () => setZoom(zoom - ZOOM_STEP));
+    document.getElementById('zoomLvl').addEventListener('click', () => setZoom(1));
+    document.getElementById('calBody').addEventListener('wheel', e => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const cb = e.currentTarget;
+      setZoom(zoom + (e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP), y2m(e.clientY - cb.getBoundingClientRect().top + cb.scrollTop));
+    }, { passive: false });
+
+    /* ===== Init ===== */
+    document.getElementById('exportBtn').addEventListener('click', exportJSON);
+    document.getElementById('resetBtn').addEventListener('click', resetAll);
+    const refInput = document.getElementById('refDateInput');
+    loadState();
+    refInput.value = refDate.toISOString().slice(0, 10);
+    updateDays();
+    buildHeaders(); buildColumns(); calcLayout();
+    setInterval(updateNow, 60000);
+    setTimeout(() => toast('드래그로 일정 추가 · 빠른입력: 09001730 또는 0900+90'), 400);
+  </script>
+</body>
+
+</html>

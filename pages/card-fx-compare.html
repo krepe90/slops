@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>카드 해외결제 수수료 비교 (JPY)</title>
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --good: #059669;
+      --bad: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0 0 4px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .input-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+    }
+
+    .field input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .results {
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      transition: border-color 0.15s;
+    }
+
+    .card.best {
+      border-color: var(--good);
+      border-width: 2px;
+      padding: 15px 17px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .card-name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .card-brand {
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .card-notes {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .amount-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .amount-main {
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .amount-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .refund {
+      font-size: 13px;
+      color: var(--good);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .net {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      margin-top: 4px;
+    }
+
+    .breakdown {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .breakdown div {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+
+    .breakdown .val {
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+
+    .best-badge {
+      display: inline-block;
+      background: var(--good);
+      color: white;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 6px;
+    }
+
+    .chart-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .chart-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-swatch {
+      width: 14px;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    .tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(31, 41, 55, 0.95);
+      color: white;
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      transform: translate(-50%, -100%);
+      opacity: 0;
+      transition: opacity 0.1s;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tooltip.show {
+      opacity: 1;
+    }
+
+    .tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .tooltip-row .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+
+    footer {
+      margin-top: 24px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>카드 해외결제 수수료 비교</h1>
+    <div class="subtitle">일본 엔화(JPY) 결제 시 카드별 예상 결제액을 계산합니다.</div>
+
+    <div class="input-panel">
+      <div class="input-row">
+        <div class="field">
+          <label for="jpy">엔화 금액 (¥)</label>
+          <input id="jpy" type="number" value="10000" min="0" step="100">
+        </div>
+        <div class="field">
+          <label for="midRate">100엔당 원 (매매기준율)</label>
+          <input id="midRate" type="number" value="950" min="0" step="0.01">
+          <div class="hint">네이버 "엔화 환율" → 기본</div>
+        </div>
+        <div class="field">
+          <label for="usdMidRate">$1당 원 (매매기준율)</label>
+          <input id="usdMidRate" type="number" value="1375" min="0" step="0.01">
+          <div class="hint">네이버 "달러 환율" → 기본</div>
+        </div>
+      </div>
+      <details style="margin-top:10px;">
+        <summary style="font-size:12px; color:var(--muted); cursor:pointer;">고급 설정 (스프레드 조정)</summary>
+        <div class="input-row" style="margin-top:10px;">
+          <div class="field">
+            <label for="usdSpread">USD 전신환 스프레드 (%)</label>
+            <input id="usdSpread" type="number" value="1.0" min="0" step="0.1">
+            <div class="hint">USD TTS = 매매기준율 × (1+스프레드)</div>
+          </div>
+          <div class="field">
+            <label for="networkMarkup">VISA/MC 네트워크 마크업 (%)</label>
+            <input id="networkMarkup" type="number" value="0.3" min="0" step="0.05">
+            <div class="hint">JPY→USD 환산 시 국제카드사 수수료 (통상 0.3~0.5%)</div>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="results" id="results"></div>
+
+    <div class="chart-panel">
+      <div class="chart-title">금액별 매매기준율 대비 추가 비용</div>
+      <div class="chart-sub">100엔 단위, 0엔 ~ 10,000엔 / 매매기준율 기준 환산액과의 차액(₩)</div>
+      <div class="chart-wrap">
+        <svg id="chart" class="chart-svg" viewBox="0 0 800 360" preserveAspectRatio="none"></svg>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <footer>
+      <div>※ 실제 청구액은 매입일 환율·카드사 반올림 처리에 따라 달라질 수 있습니다.</div>
+      <div>※ MG+S·네이버페이는 JPY→USD→KRW 순으로 환산됩니다. JPY→USD는 매매기준율 비율로, USD→KRW는 전신환매도율(매매기준율 + 스프레드)로 근사 계산합니다.</div>
+      <div>※ 네이버페이 머니카드 혜택(수수료 포인트 환급·2% 적립)은 2026년 이벤트 기준이며, 포인트는 익월 15일 지급됩니다.</div>
+      <div>※ 하나카드 MG+S의 해외결제 관련 추가 할인/우대 혜택은 반영되어 있지 않습니다.</div>
+    </footer>
+  </div>
+
+  <script>
+    // ============================================================
+    // 카드 설정 — 새 카드를 추가하려면 이 배열에 객체를 추가하세요.
+    // ============================================================
+    // calculate(ctx): {
+    //   jpy, midRate (원/100엔), ttsRate (원/100엔), usdRate (원/USD)
+    // } → {
+    //   charged: 실제 청구(결제)되는 원화 금액,
+    //   refund: 포인트/캐시백으로 돌려받는 금액,
+    //   breakdown: [{label, value}]  선택적 상세 내역
+    // }
+    // net = charged - refund (실질 비용)
+    // ============================================================
+
+    const CARDS = [
+      {
+        id: 'mgs',
+        name: '하나카드 MG+S',
+        brand: 'Mastercard 신용',
+        color: '#dc2626',
+        notes: '(거래미화금액 × 전신환매도율) + 국제브랜드 1.0% + 해외서비스 0.2%',
+        calculate: ({ jpy, usdRate, jpyUsdRate }) => {
+          const usd = jpy / jpyUsdRate;
+          const base = usd * usdRate;
+          const intlBrand = usd * 0.010 * usdRate;
+          const overseasSvc = usd * 0.002 * usdRate;
+          const charged = base + intlBrand + overseasSvc;
+          return {
+            charged,
+            refund: 0,
+            breakdown: [
+              { label: `거래미화금액 ($${usd.toFixed(2)}) × 전신환매도율`, value: base },
+              { label: '국제브랜드 수수료 (미화 × 1.0% × 전신환매도율)', value: intlBrand },
+              { label: '해외서비스 수수료 (미화 × 0.2% × 전신환매도율)', value: overseasSvc },
+            ],
+          };
+        },
+      },
+      {
+        id: 'naverpay',
+        name: '네이버페이 머니카드',
+        brand: 'VISA 체크 (BC)',
+        color: '#16a34a',
+        notes: '(거래미화 × 전신환매도율) + 국제브랜드 1.1% + 건당 $0.5 → 전액 포인트 환급, 2% 적립 (2026). SC제일 전신환매도율은 09:21 KST부터 당일값 적용',
+        calculate: ({ jpy, usdRate, jpyUsdRate }) => {
+          const usd = jpy / jpyUsdRate;
+          const base = usd * usdRate;
+          const intlBrand = usd * 0.011 * usdRate;
+          const perTxn = 0.5 * usdRate;
+          const charged = base + intlBrand + perTxn;
+          const feeRefund = intlBrand + perTxn;
+          const cashback = base * 0.02;
+          const refund = feeRefund + cashback;
+          return {
+            charged,
+            refund,
+            breakdown: [
+              { label: `거래미화금액 ($${usd.toFixed(2)}) × 전신환매도율`, value: base },
+              { label: '국제브랜드 수수료 (미화 × 1.1% × 전신환매도율)', value: intlBrand },
+              { label: '해외이용 수수료 ($0.5 × 전신환매도율)', value: perTxn },
+              { label: '수수료 포인트 환급 (브랜드 + 건당)', value: -feeRefund },
+              { label: '해외결제 2% 포인트 적립', value: -cashback },
+            ],
+          };
+        },
+      },
+      {
+        id: 'travlog',
+        name: '하나카드 트래블로그 체크카드',
+        brand: 'Mastercard 체크',
+        color: '#2563eb',
+        notes: 'JPY 상시 무료환전 (매매기준율 100% 우대), 국제브랜드·해외서비스 수수료 면제',
+        calculate: ({ jpy, midRate }) => {
+          const charged = jpy * midRate / 100;
+          return {
+            charged,
+            refund: 0,
+            breakdown: [
+              { label: '환율 적용액 (매매기준율)', value: charged },
+              { label: '국제브랜드 수수료', value: 0 },
+              { label: '해외서비스 수수료', value: 0 },
+            ],
+          };
+        },
+      },
+    ];
+
+    // ============================================================
+    // 렌더링
+    // ============================================================
+
+    const fmt = n => Math.round(n).toLocaleString('ko-KR') + '원';
+    const fmtSigned = n => (n > 0 ? '+' : n < 0 ? '-' : '') + Math.round(Math.abs(n)).toLocaleString('ko-KR') + '원';
+
+    const DEFAULTS = {
+      jpy: 10000,
+      midRate: 950,
+      usdMidRate: 1375,
+      usdSpread: 1.0,
+      networkMarkup: 0.3,
+    };
+
+    function readField(id) {
+      const el = document.getElementById(id);
+      const raw = el.value.trim();
+      if (raw === '') return DEFAULTS[id];
+      const n = parseFloat(raw);
+      return Number.isFinite(n) ? n : DEFAULTS[id];
+    }
+
+    function getInputs() {
+      const jpy = readField('jpy');
+      const midRate = readField('midRate');
+      const usdMidRate = readField('usdMidRate');
+      const usdSpread = readField('usdSpread') / 100;
+      const networkMarkup = readField('networkMarkup') / 100;
+
+      // 유도:
+      // - USD 전신환매도율: usdMidRate × (1 + 스프레드)
+      // - JPY→USD 네트워크 환산율: 시장 환율 × (1 - 마크업) → 같은 JPY가 더 많은 $로 환산되어 청구↑
+      const usdRate = usdMidRate * (1 + usdSpread);
+      const marketJpyUsd = midRate > 0 ? (100 * usdMidRate / midRate) : 1;
+      const jpyUsdRate = marketJpyUsd / (1 + networkMarkup);
+
+      return { jpy, midRate, usdRate, jpyUsdRate };
+    }
+
+    function render() {
+      const ctx = getInputs();
+      const results = CARDS.map(card => {
+        const r = card.calculate(ctx);
+        return { card, ...r, net: r.charged - r.refund };
+      });
+
+      const minNet = Math.min(...results.map(r => r.net));
+      const container = document.getElementById('results');
+      container.innerHTML = '';
+
+      results
+        .slice()
+        .sort((a, b) => a.net - b.net)
+        .forEach(r => {
+          const isBest = r.net === minNet;
+          const el = document.createElement('div');
+          el.className = 'card' + (isBest ? ' best' : '');
+
+          const breakdownHtml = r.breakdown.map(b => `
+        <div>
+          <span>${b.label}</span>
+          <span class="val">${fmtSigned(b.value)}</span>
+        </div>
+      `).join('');
+
+          el.innerHTML = `
+        <div class="card-header">
+          <div>
+            <span class="card-name">${r.card.name}</span>
+            ${isBest ? '<span class="best-badge">최저</span>' : ''}
+          </div>
+          <span class="card-brand">${r.card.brand}</span>
+        </div>
+        <div class="card-notes">${r.card.notes}</div>
+        <div class="amount-row">
+          <span class="amount-main">${fmt(r.charged)}</span>
+          <span class="amount-label">카드 청구액</span>
+        </div>
+        ${r.refund > 0 ? `<div class="refund">포인트 환급 −${fmt(r.refund)}</div>` : ''}
+        <div class="net">실질 비용 ${fmt(r.net)}</div>
+        <div class="breakdown">${breakdownHtml}</div>
+      `;
+          container.appendChild(el);
+        });
+    }
+
+    // ============================================================
+    // 차트 렌더링
+    // ============================================================
+
+    const CHART = {
+      width: 800,
+      height: 360,
+      padL: 70,
+      padR: 20,
+      padT: 20,
+      padB: 40,
+      xMax: 10000,
+      xStep: 100,
+    };
+
+    function renderChart() {
+      const ctx = getInputs();
+      const svg = document.getElementById('chart');
+      const legendEl = document.getElementById('legend');
+      const { width: W, height: H, padL, padR, padT, padB, xMax, xStep } = CHART;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+
+      const steps = [];
+      for (let x = 0; x <= xMax; x += xStep) steps.push(x);
+
+      const series = CARDS.map(card => {
+        const points = steps.map(x => {
+          const r = card.calculate({ ...ctx, jpy: x });
+          const baseline = x * ctx.midRate / 100;
+          return { x, y: (r.charged - r.refund) - baseline };
+        });
+        return { card, points };
+      });
+
+      const yMax = Math.max(...series.flatMap(s => s.points.map(p => p.y)));
+      const yMin = Math.min(0, ...series.flatMap(s => s.points.map(p => p.y)));
+      const yRange = (yMax - yMin) || 1;
+      const yPad = yRange * 0.05;
+      const yTop = yMax + yPad;
+      const yBot = yMin - yPad;
+
+      const sx = x => padL + (x / xMax) * plotW;
+      const sy = y => padT + plotH - ((y - yBot) / (yTop - yBot)) * plotH;
+
+      // y축 눈금
+      const yTicks = 5;
+      const yGrid = [];
+      for (let i = 0; i <= yTicks; i++) {
+        const v = yBot + (yTop - yBot) * (i / yTicks);
+        yGrid.push(v);
+      }
+      // x축 눈금 (5000엔 간격)
+      const xTicks = [0, 2000, 4000, 6000, 8000, 10000];
+
+      let html = '';
+
+      // 가로 그리드 + y 라벨
+      yGrid.forEach(v => {
+        const y = sy(v);
+        html += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>`;
+        html += `<text x="${padL - 8}" y="${y + 4}" font-size="10" fill="#6b7280" text-anchor="end">${Math.round(v).toLocaleString('ko-KR')}</text>`;
+      });
+
+      // x 라벨
+      xTicks.forEach(v => {
+        const x = sx(v);
+        html += `<line x1="${x}" y1="${padT + plotH}" x2="${x}" y2="${padT + plotH + 4}" stroke="#9ca3af" stroke-width="1"/>`;
+        html += `<text x="${x}" y="${padT + plotH + 18}" font-size="10" fill="#6b7280" text-anchor="middle">¥${v.toLocaleString('ko-KR')}</text>`;
+      });
+
+      // 축 라벨
+      html += `<text x="${padL}" y="${padT - 6}" font-size="10" fill="#6b7280">매매기준율 대비 (₩) · ↑ 추가 비용 / ↓ 절감</text>`;
+
+      // y=0 기준선 (매매기준율 동일선) — 강조
+      if (yBot <= 0 && yTop >= 0) {
+        const zeroY = sy(0);
+        html += `<line x1="${padL}" y1="${zeroY}" x2="${W - padR}" y2="${zeroY}" stroke="#374151" stroke-width="1.5"/>`;
+        html += `<text x="${W - padR - 4}" y="${zeroY - 4}" font-size="10" fill="#374151" text-anchor="end">매매기준율</text>`;
+      }
+
+      // 선 그리기
+      series.forEach(s => {
+        const d = s.points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${sx(p.x)} ${sy(p.y)}`).join(' ');
+        html += `<path d="${d}" stroke="${s.card.color}" stroke-width="2" fill="none"/>`;
+      });
+
+      // 호버 영역 (투명) - 세로 크로스헤어
+      html += `<line id="crosshair" x1="0" y1="${padT}" x2="0" y2="${padT + plotH}" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,3" opacity="0"/>`;
+      series.forEach(s => {
+        html += `<circle class="hover-dot" data-id="${s.card.id}" cx="0" cy="0" r="4" fill="${s.card.color}" stroke="white" stroke-width="2" opacity="0"/>`;
+      });
+      html += `<rect id="hover-area" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent"/>`;
+
+      svg.innerHTML = html;
+
+      // 범례
+      legendEl.innerHTML = CARDS.map(c => `
+    <div class="legend-item">
+      <span class="legend-swatch" style="background:${c.color}"></span>
+      <span>${c.name}</span>
+    </div>
+  `).join('');
+
+      // 호버 인터랙션
+      const tooltip = document.getElementById('tooltip');
+      const hoverArea = document.getElementById('hover-area');
+      const crosshair = document.getElementById('crosshair');
+      const dots = svg.querySelectorAll('.hover-dot');
+
+      hoverArea.addEventListener('mousemove', e => {
+        const rect = svg.getBoundingClientRect();
+        const scaleX = W / rect.width;
+        const scaleY = H / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const ratio = (mx - padL) / plotW;
+        const rawX = Math.max(0, Math.min(xMax, ratio * xMax));
+        const x = Math.round(rawX / xStep) * xStep;
+        const cx = sx(x);
+
+        crosshair.setAttribute('x1', cx);
+        crosshair.setAttribute('x2', cx);
+        crosshair.setAttribute('opacity', '1');
+
+        const rows = series.map(s => {
+          const p = s.points.find(pt => pt.x === x);
+          const dot = svg.querySelector(`.hover-dot[data-id="${s.card.id}"]`);
+          dot.setAttribute('cx', sx(p.x));
+          dot.setAttribute('cy', sy(p.y));
+          dot.setAttribute('opacity', '1');
+          return { card: s.card, value: p.y };
+        }).sort((a, b) => a.value - b.value);
+
+        tooltip.innerHTML = `
+      <div style="font-weight:600; margin-bottom:4px;">¥${x.toLocaleString('ko-KR')} · 매매기준율 대비</div>
+      ${rows.map(r => {
+          const sign = r.value > 0 ? '+' : r.value < 0 ? '−' : '';
+          return `
+          <div class="tooltip-row">
+            <span><span class="dot" style="background:${r.card.color}"></span>${r.card.name}</span>
+            <span>${sign}${Math.round(Math.abs(r.value)).toLocaleString('ko-KR')}원</span>
+          </div>
+        `;
+        }).join('')}
+    `;
+        tooltip.classList.add('show');
+        const tipX = (cx / W) * rect.width;
+        const tipY = (padT / H) * rect.height;
+        tooltip.style.left = tipX + 'px';
+        tooltip.style.top = (tipY - 8) + 'px';
+      });
+
+      hoverArea.addEventListener('mouseleave', () => {
+        crosshair.setAttribute('opacity', '0');
+        dots.forEach(d => d.setAttribute('opacity', '0'));
+        tooltip.classList.remove('show');
+      });
+    }
+
+    function updateAll() {
+      render();
+      renderChart();
+    }
+
+    document.querySelectorAll('.input-panel input, details input').forEach(input => {
+      input.addEventListener('input', updateAll);
+      input.addEventListener('blur', () => {
+        if (input.value.trim() === '' && input.id in DEFAULTS) {
+          input.value = DEFAULTS[input.id];
+          updateAll();
+        }
+      });
+    });
+
+    updateAll();
+  </script>
+</body>
+
+</html>
