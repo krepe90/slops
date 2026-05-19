@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>立川駅周辺 3D Viewer</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0b0d10; color: #e6e6e6; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", system-ui, sans-serif; }
+    #app { position: fixed; inset: 0; }
+    #hud {
+      position: fixed; top: 12px; left: 12px; padding: 10px 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+      border-radius: 8px; font-size: 12px; line-height: 1.55;
+      pointer-events: none; max-width: 260px;
+    }
+    #hud b { color: #8fd3ff; }
+    #hud a { pointer-events: auto; }
+    #status {
+      position: fixed; bottom: 12px; left: 12px; padding: 6px 10px;
+      background: rgba(0,0,0,0.65); border-radius: 6px; font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    #status.err { background: rgba(120, 20, 20, 0.85); }
+    a { color: #8fd3ff; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="hud">
+    <b>立川駅 周辺 PLATEAU</b><br>
+    마우스 드래그: 시점 회전<br>
+    WASD: 수평이동 &nbsp; Q/E: 상승/하강<br>
+    Shift: ×2 속도 &nbsp; Ctrl: ×0.5 속도 &nbsp; R: 시점 리셋<br>
+    바닥: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">地理院タイル</a><br>
+    건물: <a href="https://www.mlit.go.jp/plateau/" target="_blank" rel="noopener noreferrer">Project PLATEAU</a>
+  </div>
+  <div id="status">init…</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://esm.sh/three@0.165.0",
+      "three/addons/": "https://esm.sh/three@0.165.0/examples/jsm/",
+      "3d-tiles-renderer": "https://esm.sh/3d-tiles-renderer@0.3.40?deps=three@0.165.0",
+      "3d-tiles-renderer/": "https://esm.sh/3d-tiles-renderer@0.3.40/"
+    }
+  }
+  </script>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
